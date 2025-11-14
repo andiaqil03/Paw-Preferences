@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CatStack } from './components/CatStack';
 import { ResultsPage } from './components/ResultsPage';
 import { Instructions } from './components/Instructions';
