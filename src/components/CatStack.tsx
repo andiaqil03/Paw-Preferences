@@ -18,6 +18,8 @@ export const CatStack: React.FC<CatStackProps> = ({
   const [swipeOffset, setSwipeOffset] = React.useState(0);
   const [rotation, setRotation] = React.useState(0);
   const [isAnimating, setIsAnimating] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [nextImageLoaded, setNextImageLoaded] = React.useState(false);
 
   // Reset state when currentIndex changes (new cat loaded)
   React.useEffect(() => {
@@ -25,6 +27,8 @@ export const CatStack: React.FC<CatStackProps> = ({
     setRotation(0);
     setIsAnimating(false);
     setTouchStart(null);
+    setImageLoaded(false);
+    setNextImageLoaded(false);
   }, [currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -37,10 +41,13 @@ export const CatStack: React.FC<CatStackProps> = ({
     const currentX = e.targetTouches[0].clientX;
     const distance = currentX - touchStart;
     
+    // Limit the swipe distance for smoother feel
+    const limitedDistance = Math.max(-250, Math.min(250, distance));
+    
     // Calculate rotation based on swipe distance
-    const rot = (distance / window.innerWidth) * 20;
+    const rot = (limitedDistance / window.innerWidth) * 20;
     setRotation(rot);
-    setSwipeOffset(distance);
+    setSwipeOffset(limitedDistance);
   };
 
   const handleTouchEnd = () => {
@@ -70,9 +77,13 @@ export const CatStack: React.FC<CatStackProps> = ({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (e.buttons !== 1 || !touchStart) return;
     const distance = e.clientX - touchStart;
-    const rot = (distance / window.innerWidth) * 20;
+    
+    // Limit the swipe distance for smoother feel
+    const limitedDistance = Math.max(-250, Math.min(250, distance));
+    
+    const rot = (limitedDistance / window.innerWidth) * 20;
     setRotation(rot);
-    setSwipeOffset(distance);
+    setSwipeOffset(limitedDistance);
   };
 
   const handleMouseUp = () => {
@@ -128,13 +139,15 @@ export const CatStack: React.FC<CatStackProps> = ({
           style={{
             transform: 'translateY(12px)',
             zIndex: 0,
-            opacity: 0.8,
+            opacity: nextImageLoaded ? 0.8 : 0.4,
+            transition: 'opacity 0.3s ease-in-out'
           }}
         >
           <img
             src={nextCat.url}
             alt="Next cat"
             className="w-full h-full object-cover"
+            onLoad={() => setNextImageLoaded(true)}
             onError={(e) => {
               e.currentTarget.src = `https://cataas.com/cat?timestamp=${Date.now()}`;
             }}
@@ -151,18 +164,20 @@ export const CatStack: React.FC<CatStackProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="absolute w-full max-w-sm h-96 rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none z-10"
+        className="absolute w-full max-w-sm h-96 rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none z-10 bg-gradient-to-br from-gray-200 to-gray-300"
         style={{
           transform: isAnimating 
             ? `translateX(${swipeOffset > 0 ? 500 : -500}px) rotateZ(${swipeOffset > 0 ? 20 : -20}deg)`
             : `translateX(${swipeOffset}px) rotateZ(${rotation}deg)`,
-          transition: isAnimating ? 'transform 0.6s ease-in-out' : 'transform 0.1s linear',
+          transition: isAnimating ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'transform 0.08s linear',
+          opacity: imageLoaded ? 1 : 0.7
         }}
       >
         <img
           src={cat.url}
           alt="Cat to swipe"
-          className="w-full h-full object-cover"
+          className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             e.currentTarget.src = `https://cataas.com/cat?timestamp=${Date.now()}`;
           }}
